@@ -86,7 +86,7 @@ function renderPalette(palette) {
         paletteContainer.appendChild(colorBox);
     });
 
-    // Copy functionality
+   
     document.querySelectorAll(".copy-btn").forEach(button => {
         button.addEventListener("click", () => {
             const hex = button.getAttribute("data-hex");
