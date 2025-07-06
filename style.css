@@ -527,6 +527,49 @@ body {
     width: 100%;
   }
 }
+.color-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin: 10px 0;
+    border-radius: 10px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.color-box:hover {
+    transform: scale(1.02);
+}
+
+.hex-code {
+    margin: 0 8px;
+}
+
+.copy-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: inherit;
+    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.copy-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.copy-btn i {
+    font-size: 14px;
+}
+
 
 
         @media (max-width: 480px) {
