@@ -99,6 +99,12 @@ function renderPalette(palette) {
         });
     });
 }
+    const toggleBtn = document.getElementById("mobile-menu");
+    const navLinks = document.getElementById("navbar-links");
+
+    toggleBtn.addEventListener("click", () => {
+        navLinks.classList.toggle("active");
+    });
 
   function toggleMobileMenu() {
     const navLinks = document.getElementById("navLinks");
