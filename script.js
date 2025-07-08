@@ -8,6 +8,21 @@ orgIdentityInput.addEventListener("keypress", (e) => {
         generatePalette();
     }
 });
+document.addEventListener("click", function (e) {
+  if (e.target.closest(".copy-shade")) {
+    const colorDiv = e.target.closest(".color-shade");
+    const hexCode = colorDiv.getAttribute("data-hex");
+
+    navigator.clipboard.writeText(hexCode).then(() => {
+      const btn = e.target.closest(".copy-shade");
+      btn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fas fa-copy"></i>';
+      }, 1500);
+    });
+  }
+});
+
 
 function generatePalette() {
     const orgIdentity = orgIdentityInput.value.trim();

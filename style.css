@@ -272,7 +272,61 @@
 .feature-description {
     font-size: 0.95rem;
     color: #666;
+}.vibgyor-section {
+    margin: 3rem auto;
+    max-width: 1000px;
+    padding: 1rem;
+    text-align: center;
 }
+
+.vibgyor-section h2 {
+    margin-bottom: 1rem;
+    font-size: 1.75rem;
+    color: #444;
+}
+
+.vibgyor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.vibgyor-card {
+    background: #fff;
+    border: 1px solid #eee;
+    padding: 0.5rem;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.color-shade {
+    height: 40px;
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.5rem;
+}
+
+.copy-shade {
+    background: rgba(255,255,255,0.7);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.color-shade:hover .copy-shade {
+    opacity: 1;
+}
+
 
 
 @media (max-width: 768px) {
