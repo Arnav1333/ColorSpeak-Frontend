@@ -187,3 +187,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     displaySavedPalettes();
 });
+const toggleBtn = document.getElementById('themeToggle');
+const body = document.body;
+
+// Load theme on page load
+if (localStorage.getItem('theme') === 'dark') {
+  body.classList.add('dark-mode');
+  toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+}
+
+// Toggle theme
+toggleBtn.addEventListener('click', () => {
+  body.classList.toggle('dark-mode');
+
+  if (body.classList.contains('dark-mode')) {
+    localStorage.setItem('theme', 'dark');
+    toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+  } else {
+    localStorage.setItem('theme', 'light');
+    toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+  }
+});
