@@ -232,9 +232,9 @@ window.addEventListener('scroll', function () {
   }
 });
 const text = "ColorSpeak";
-const speed = 150;       // typing speed
-const eraseSpeed = 100;  // erase speed
-const delay = 1000;      // delay before erasing
+const speed = 150;      
+const eraseSpeed = 100;  
+const delay = 1000;      
 let i = 0;
 let isDeleting = false;
 
