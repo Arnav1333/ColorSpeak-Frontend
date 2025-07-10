@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const paletteContainer = document.getElementById("paletteContainer");
     const toggleBtn = document.getElementById("mobile-menu");
     const navLinks = document.getElementById("navbar-links");
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const body = document.body;
 
     generatePaletteBtn.addEventListener("click", generatePalette);
     orgIdentityInput.addEventListener("keypress", (e) => {
@@ -12,6 +14,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     toggleBtn.addEventListener("click", () => {
         navLinks.classList.toggle("active");
+    });
+
+    
+    if (localStorage.getItem('theme') === 'dark') {
+        body.classList.add('dark-mode');
+        themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+
+  
+    themeToggleBtn.addEventListener('click', () => {
+        body.classList.toggle('dark-mode');
+        if (body.classList.contains('dark-mode')) {
+            localStorage.setItem('theme', 'dark');
+            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+            localStorage.setItem('theme', 'light');
+            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        }
     });
 
     function generatePalette() {
@@ -26,9 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         fetch("https://colorspeak.onrender.com/api/suggest-colors/", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ input: orgIdentity })
         })
         .then(async response => {
@@ -104,7 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
         savedPaletteContainer.innerHTML = '';
 
         let saved = JSON.parse(localStorage.getItem("savedPalettes") || "[]");
-
         saved = saved.filter(c => c && typeof c.hex === "string" && typeof c.name === "string");
 
         if (saved.length === 0) {
@@ -185,26 +202,58 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function attachVibgyorCopyListeners() {
+        document.querySelectorAll(".copy-shade").forEach(button => {
+            button.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const hex = button.parentElement.getAttribute("data-hex");
+                navigator.clipboard.writeText(hex).then(() => {
+                    button.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        button.innerHTML = '<i class="fas fa-copy"></i>';
+                    }, 1500);
+                });
+            });
+        });
+    }
+
+   
     displaySavedPalettes();
+    attachVibgyorCopyListeners();
 });
-const toggleBtn = document.getElementById('themeToggle');
-const body = document.body;
-
-// Load theme on page load
-if (localStorage.getItem('theme') === 'dark') {
-  body.classList.add('dark-mode');
-  toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-}
-
-// Toggle theme
-toggleBtn.addEventListener('click', () => {
-  body.classList.toggle('dark-mode');
-
-  if (body.classList.contains('dark-mode')) {
-    localStorage.setItem('theme', 'dark');
-    toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+window.addEventListener('scroll', function () {
+  const navbar = document.querySelector('.navbar');
+  if (window.scrollY > 10) {
+    navbar.style.padding = '0.5rem 2rem';
+    navbar.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
   } else {
-    localStorage.setItem('theme', 'light');
-    toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+    navbar.style.padding = '1rem 2rem';
+    navbar.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
   }
 });
+const text = "ColorSpeak";
+const speed = 150;       // typing speed
+const eraseSpeed = 100;  // erase speed
+const delay = 1000;      // delay before erasing
+let i = 0;
+let isDeleting = false;
+
+function typeLoop() {
+  const typedText = document.getElementById("typed-text");
+
+  if (!isDeleting && i <= text.length) {
+    typedText.textContent = text.substring(0, i);
+    i++;
+    setTimeout(typeLoop, speed);
+  } else if (isDeleting && i >= 0) {
+    typedText.textContent = text.substring(0, i);
+    i--;
+    setTimeout(typeLoop, eraseSpeed);
+  } else {
+    isDeleting = !isDeleting;
+    setTimeout(typeLoop, delay);
+  }
+}
+
+window.onload = typeLoop;
+

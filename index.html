@@ -46,11 +46,11 @@
 </nav>
 
     <header>
-        <h1> ColorSpeak</h1>
+        <h1><span id="typed-text"></span><span class="cursor">|</span></h1>
         <p>Describe your brand, and we’ll give you colors that speak its voice.</p>
     </header>
 
-    <div class="generator">
+    <div class="generator" id="generator">
         <input id="orgIdentity" type="text" placeholder="e.g. Bold fintech startup" />
         <button id="generatePaletteBtn"><i class="fas fa-magic"></i> Generate</button>
     </div>
@@ -298,7 +298,8 @@
                 <h3><i class="fas fa-cloud"></i> Hosting & Deployment</h3>
                 <div class="resource-links">
                     <a href="https://vercel.com" target="_blank" class="resource-link">
-                        <i class="fas fa-triangle"></i>
+                        <i class="fas fa-play fa-rotate-270"></i> <!-- Looks like a triangle -->
+
                         <span>Vercel</span>
                     </a>
                     <a href="https://netlify.com" target="_blank" class="resource-link">
@@ -321,7 +322,7 @@
 
 
     <footer>
-        Made with ❤️ by ColorSpeak • Cooked up with code & color 🎨✨
+        Made with ❤️ by Arnav • Cooked up with code & color 🎨✨
     </footer>
 
     <script src="script.js"></script>
