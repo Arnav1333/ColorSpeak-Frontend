@@ -231,29 +231,5 @@ window.addEventListener('scroll', function () {
     navbar.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
   }
 });
-const text = "ColorSpeak";
-const speed = 150;      
-const eraseSpeed = 100;  
-const delay = 1000;      
-let i = 0;
-let isDeleting = false;
 
-function typeLoop() {
-  const typedText = document.getElementById("typed-text");
-
-  if (!isDeleting && i <= text.length) {
-    typedText.textContent = text.substring(0, i);
-    i++;
-    setTimeout(typeLoop, speed);
-  } else if (isDeleting && i >= 0) {
-    typedText.textContent = text.substring(0, i);
-    i--;
-    setTimeout(typeLoop, eraseSpeed);
-  } else {
-    isDeleting = !isDeleting;
-    setTimeout(typeLoop, delay);
-  }
-}
-
-window.onload = typeLoop;
 
