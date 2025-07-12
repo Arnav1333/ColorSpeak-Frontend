@@ -27,7 +27,7 @@ Just describe your brand (e.g., *“minimal and modern”* or *“bold and confi
 
 ## 🖼️ Preview
 
-![ColorSpeak Preview](https://yourdomain.com/preview-image.png)
+![ColorSpeak Preview](https://i.postimg.cc/WzLN4zJW/Screenshot-2025-07-11-193310.png)
 
 ---
 
