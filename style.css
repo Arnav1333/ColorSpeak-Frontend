@@ -620,16 +620,15 @@ footer {
 
 #aiPaletteContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1.5rem;
-  justify-items: center;
-  padding: 2rem 1rem;
-  background-color: var(--section-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 10px var(--shadow);
-  margin-top: 2rem;
-  text-align: center;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
+#aiPaletteContainer > div:first-child {
+  grid-column: 1 / -1;
+}
+
 
 
 
