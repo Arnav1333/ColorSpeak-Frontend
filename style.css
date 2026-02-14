@@ -189,6 +189,11 @@ header p {
   justify-content: space-between;
 }
 
+.shade-card {
+  width: 260px;
+  text-align: left;
+}
+
 .color-box:hover {
   transform: translateY(-4px);
 }
@@ -203,6 +208,34 @@ header p {
   font-size: 0.9rem;
   opacity: 0.85;
   margin-bottom: 0.5rem;
+}
+
+.shade-strip {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.shade-chip {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shade-label {
+  opacity: 0.9;
+}
+
+.shade-hex {
+  font-family: monospace;
+  letter-spacing: 0.2px;
 }
 
 
@@ -639,6 +672,11 @@ footer {
     width: 100%;
   }
 
+  .shade-card {
+    width: 100%;
+    max-width: 340px;
+  }
+
   .vibgyor-grid {
     grid-template-columns: 1fr;
   }
@@ -693,8 +731,6 @@ footer {
   color: #667eea;
   font-weight: bold;
 }
-
-
 
 
 

@@ -87,25 +87,33 @@ document.addEventListener("DOMContentLoaded", () => {
         paletteContainer.innerHTML = '';
 
         palette.forEach(color => {
+            const baseHex = normalizeHex(color.hex);
+            const shades = generateShades(baseHex);
             const colorBox = document.createElement("div");
             colorBox.classList.add("color-box");
-            colorBox.style.backgroundColor = color.hex;
-
-            const hex = color.hex.replace("#", "");
-            const r = parseInt(hex.substring(0, 2), 16);
-            const g = parseInt(hex.substring(2, 4), 16);
-            const b = parseInt(hex.substring(4, 6), 16);
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            colorBox.style.color = luminance > 0.5 ? "#333" : "#fff";
+            colorBox.classList.add("shade-card");
 
             colorBox.innerHTML = `
                 <span class="color-name">${color.name}</span>
-                <span class="hex-code">${color.hex.toUpperCase()}</span>
+                <span class="hex-code">Base: ${baseHex}</span>
+                <div class="shade-strip">
+                    ${shades.map((shadeHex, index) => `
+                        <button
+                            class="shade-chip copy-btn"
+                            data-hex="${shadeHex}"
+                            title="Copy ${shadeHex}"
+                            style="background-color:${shadeHex};color:${getTextColorForBackground(shadeHex)}"
+                        >
+                            <span class="shade-label">S${index + 1}</span>
+                            <span class="shade-hex">${shadeHex}</span>
+                        </button>
+                    `).join("")}
+                </div>
                 <div class="palette-actions">
-                    <button class="copy-btn" data-hex="${color.hex}">
-                        <i class="fas fa-copy"></i> Copy
+                    <button class="copy-btn" data-hex="${baseHex}">
+                        <i class="fas fa-copy"></i> Copy Base
                     </button>
-                    <button class="save-btn" data-color='${JSON.stringify(color)}'>
+                    <button class="save-btn" data-color='${JSON.stringify({ ...color, hex: baseHex })}'>
                         <i class="fas fa-bookmark"></i> Save
                     </button>
                 </div>
@@ -115,6 +123,60 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         attachButtonListeners();
+    }
+
+    function normalizeHex(hex) {
+        if (typeof hex !== "string") return "#000000";
+        const clean = hex.trim().replace("#", "");
+        if (clean.length === 3) {
+            return `#${clean.split("").map(ch => ch + ch).join("").toUpperCase()}`;
+        }
+        if (/^[0-9A-Fa-f]{6}$/.test(clean)) {
+            return `#${clean.toUpperCase()}`;
+        }
+        return "#000000";
+    }
+
+    function hexToRgb(hex) {
+        const clean = normalizeHex(hex).replace("#", "");
+        return {
+            r: parseInt(clean.substring(0, 2), 16),
+            g: parseInt(clean.substring(2, 4), 16),
+            b: parseInt(clean.substring(4, 6), 16)
+        };
+    }
+
+    function rgbToHex(r, g, b) {
+        return `#${[r, g, b].map(value => value.toString(16).padStart(2, "0")).join("").toUpperCase()}`;
+    }
+
+    function adjustShade(hex, amount) {
+        const { r, g, b } = hexToRgb(hex);
+        if (amount >= 0) {
+            return rgbToHex(
+                Math.round(r + (255 - r) * amount),
+                Math.round(g + (255 - g) * amount),
+                Math.round(b + (255 - b) * amount)
+            );
+        }
+        const factor = 1 + amount;
+        return rgbToHex(
+            Math.round(r * factor),
+            Math.round(g * factor),
+            Math.round(b * factor)
+        );
+    }
+
+    function generateShades(hex) {
+        // Ordered from lightest to darkest
+        const steps = [0.65, 0.35, 0, -0.25, -0.45];
+        return steps.map(step => adjustShade(hex, step));
+    }
+
+    function getTextColorForBackground(hex) {
+        const { r, g, b } = hexToRgb(hex);
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return luminance > 0.6 ? "#1F2937" : "#FFFFFF";
     }
 
     function displaySavedPalettes() {
@@ -180,10 +242,11 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".copy-btn").forEach(button => {
             button.addEventListener("click", () => {
                 const hex = button.getAttribute("data-hex");
+                const originalMarkup = button.innerHTML;
                 navigator.clipboard.writeText(hex).then(() => {
-                    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    button.innerHTML = '<i class="fas fa-check"></i> Copied';
                     setTimeout(() => {
-                        button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                        button.innerHTML = originalMarkup;
                     }, 1500);
                 });
             });

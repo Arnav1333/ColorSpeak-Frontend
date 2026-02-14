@@ -56,3 +56,6 @@ Just describe your brand (e.g., *“minimal and modern”* or *“bold and confi
 ```bash
 git clone https://github.com/yourusername/colorspeak.git
 cd colorspeak
+```
+
+### 2. Run locally
