@@ -190,7 +190,7 @@ header p {
 }
 
 .shade-card {
-  width: 260px;
+  width: min(92vw, 760px);
   text-align: left;
 }
 
@@ -211,31 +211,41 @@ header p {
 }
 
 .shade-strip {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  height: 145px;
   margin-bottom: 0.75rem;
 }
 
-.shade-chip {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 8px 10px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 600;
+.shade-segment {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  min-width: 0;
   cursor: pointer;
+  position: relative;
+  transition: filter 0.2s ease;
 }
 
-.shade-label {
-  opacity: 0.9;
+.shade-segment:hover {
+  filter: brightness(1.06);
 }
 
-.shade-hex {
-  font-family: monospace;
-  letter-spacing: 0.2px;
+.shade-segment.copied::after {
+  content: "Copied";
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
 }
 
 
@@ -275,6 +285,15 @@ header p {
 .save-btn:active,
 .remove-btn:active {
   transform: scale(0.97);
+}
+
+.copy-btn.shade-segment {
+  border: none;
+  padding: 0;
+}
+
+.copy-btn.shade-segment:hover {
+  border: none;
 }
 
 
@@ -674,7 +693,11 @@ footer {
 
   .shade-card {
     width: 100%;
-    max-width: 340px;
+    max-width: 100%;
+  }
+
+  .shade-strip {
+    height: 92px;
   }
 
   .vibgyor-grid {
@@ -731,7 +754,6 @@ footer {
   color: #667eea;
   font-weight: bold;
 }
-
 
 
 

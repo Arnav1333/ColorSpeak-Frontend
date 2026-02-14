@@ -99,14 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="shade-strip">
                     ${shades.map((shadeHex, index) => `
                         <button
-                            class="shade-chip copy-btn"
+                            class="shade-segment copy-btn"
                             data-hex="${shadeHex}"
                             title="Copy ${shadeHex}"
-                            style="background-color:${shadeHex};color:${getTextColorForBackground(shadeHex)}"
-                        >
-                            <span class="shade-label">S${index + 1}</span>
-                            <span class="shade-hex">${shadeHex}</span>
-                        </button>
+                            aria-label="Copy shade ${index + 1} (${shadeHex})"
+                            style="background-color:${shadeHex}"
+                        ></button>
                     `).join("")}
                 </div>
                 <div class="palette-actions">
@@ -173,12 +171,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return steps.map(step => adjustShade(hex, step));
     }
 
-    function getTextColorForBackground(hex) {
-        const { r, g, b } = hexToRgb(hex);
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        return luminance > 0.6 ? "#1F2937" : "#FFFFFF";
-    }
-
     function displaySavedPalettes() {
         const savedPaletteContainer = document.getElementById("savedPaletteContainer");
         savedPaletteContainer.innerHTML = '';
@@ -242,8 +234,17 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".copy-btn").forEach(button => {
             button.addEventListener("click", () => {
                 const hex = button.getAttribute("data-hex");
+                const isShadeSegment = button.classList.contains("shade-segment");
                 const originalMarkup = button.innerHTML;
                 navigator.clipboard.writeText(hex).then(() => {
+                    if (isShadeSegment) {
+                        button.classList.add("copied");
+                        setTimeout(() => {
+                            button.classList.remove("copied");
+                        }, 1200);
+                        return;
+                    }
+
                     button.innerHTML = '<i class="fas fa-check"></i> Copied';
                     setTimeout(() => {
                         button.innerHTML = originalMarkup;
@@ -294,5 +295,4 @@ window.addEventListener('scroll', function () {
     navbar.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
   }
 });
-
 
