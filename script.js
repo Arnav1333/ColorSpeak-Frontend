@@ -184,22 +184,32 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         saved.forEach(color => {
+            const baseHex = normalizeHex(color.hex);
+            const shades = generateShades(baseHex);
             const colorBox = document.createElement("div");
             colorBox.classList.add("color-box");
-            colorBox.style.backgroundColor = color.hex;
-
-            const hex = color.hex.replace("#", "");
-            const r = parseInt(hex.substring(0, 2), 16);
-            const g = parseInt(hex.substring(2, 4), 16);
-            const b = parseInt(hex.substring(4, 6), 16);
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            colorBox.style.color = luminance > 0.5 ? "#333" : "#fff";
+            colorBox.classList.add("shade-card");
+            colorBox.classList.add("saved");
 
             colorBox.innerHTML = `
                 <span class="color-name">${color.name}</span>
-                <span class="hex-code">${color.hex.toUpperCase()}</span>
+                <span class="hex-code">Base: ${baseHex}</span>
+                <div class="shade-strip">
+                    ${shades.map((shadeHex, index) => `
+                        <button
+                            class="shade-segment copy-btn"
+                            data-hex="${shadeHex}"
+                            title="Copy ${shadeHex}"
+                            aria-label="Copy saved shade ${index + 1} (${shadeHex})"
+                            style="background-color:${shadeHex}"
+                        ></button>
+                    `).join("")}
+                </div>
                 <div class="palette-actions">
-                    <button class="remove-btn" data-hex="${color.hex}">
+                    <button class="copy-btn" data-hex="${baseHex}">
+                        <i class="fas fa-copy"></i> Copy Base
+                    </button>
+                    <button class="remove-btn" data-hex="${baseHex}">
                         <i class="fas fa-trash"></i> Remove
                     </button>
                 </div>
@@ -208,6 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
             savedPaletteContainer.appendChild(colorBox);
         });
 
+        attachCopyListeners();
         attachRemoveListeners();
     }
 
@@ -218,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let saved = JSON.parse(localStorage.getItem("savedPalettes") || "[]");
                 saved = saved.filter(c => c && typeof c.hex === "string" && typeof c.name === "string");
 
-                if (!saved.some(c => c.hex === colorData.hex)) {
+                if (!saved.some(c => normalizeHex(c.hex) === normalizeHex(colorData.hex))) {
                     saved.push(colorData);
                     localStorage.setItem("savedPalettes", JSON.stringify(saved));
                     displaySavedPalettes();
@@ -231,7 +242,15 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+        attachCopyListeners();
+    }
+
+    function attachCopyListeners() {
         document.querySelectorAll(".copy-btn").forEach(button => {
+            if (button.dataset.copyBound === "true") {
+                return;
+            }
+            button.dataset.copyBound = "true";
             button.addEventListener("click", () => {
                 const hex = button.getAttribute("data-hex");
                 const isShadeSegment = button.classList.contains("shade-segment");
@@ -257,9 +276,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function attachRemoveListeners() {
         document.querySelectorAll(".remove-btn").forEach(button => {
             button.addEventListener("click", () => {
-                const hex = button.getAttribute("data-hex");
+                const hex = normalizeHex(button.getAttribute("data-hex"));
                 let saved = JSON.parse(localStorage.getItem("savedPalettes") || "[]");
-                saved = saved.filter(c => c.hex !== hex);
+                saved = saved.filter(c => normalizeHex(c.hex) !== hex);
                 localStorage.setItem("savedPalettes", JSON.stringify(saved));
                 displaySavedPalettes();
             });
@@ -295,4 +314,3 @@ window.addEventListener('scroll', function () {
     navbar.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
   }
 });
-
