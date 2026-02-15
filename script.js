@@ -323,25 +323,46 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function getGeneratedPaletteForExport() {
-        return currentGeneratedPalette.filter(color => color && color.name && color.hex);
+    function getGeneratedPalettesForExport() {
+        return currentGeneratedPalette
+            .filter(color => color && color.name && color.hex)
+            .map(color => {
+                const baseHex = normalizeHex(color.hex);
+                return {
+                    name: color.name,
+                    baseHex,
+                    shades: generateShades(baseHex)
+                };
+            });
     }
 
-    function getSavedPaletteForExport() {
+    function getSavedPalettesForExport() {
         let saved = JSON.parse(localStorage.getItem("savedPalettes") || "[]");
         saved = saved.filter(c => c && typeof c.hex === "string" && typeof c.name === "string");
-        return saved.map(color => ({
-            name: color.name.trim() || "Untitled",
-            hex: normalizeHex(color.hex)
-        }));
+        return saved.map(color => {
+            const baseHex = normalizeHex(color.hex);
+            return {
+                name: color.name.trim() || "Untitled",
+                baseHex,
+                shades: generateShades(baseHex)
+            };
+        });
     }
 
-    function getBasicPaletteForExport() {
-        const shades = Array.from(document.querySelectorAll(".vibgyor-card .color-shade"));
-        return shades.map((shade, index) => ({
-            name: `basic-${index + 1}`,
-            hex: normalizeHex(shade.getAttribute("data-hex"))
-        }));
+    function getBasicPalettesForExport() {
+        const cards = Array.from(document.querySelectorAll(".vibgyor-card"));
+        return cards
+            .map((card, index) => {
+                const shades = Array.from(card.querySelectorAll(".color-shade"))
+                    .map(shade => normalizeHex(shade.getAttribute("data-hex")))
+                    .filter(Boolean);
+                return {
+                    name: `basic-palette-${index + 1}`,
+                    baseHex: shades[Math.floor(shades.length / 2)] || shades[0] || "#000000",
+                    shades
+                };
+            })
+            .filter(palette => palette.shades.length > 0);
     }
 
     function getSafeName(name, index) {
@@ -375,59 +396,71 @@ document.addEventListener("DOMContentLoaded", () => {
         markButtonSuccess(button, '<i class="fas fa-ban"></i> No colors', defaultLabel, 1200);
     }
 
-    function bindExportControls({ jsonBtn, cssBtn, csvBtn, copyBtn, getPalette, filenamePrefix }) {
+    function bindExportControls({ jsonBtn, cssBtn, csvBtn, copyBtn, getPalettes, filenamePrefix }) {
         const jsonDefault = '<i class="fas fa-file-code"></i> JSON';
         const cssDefault = '<i class="fas fa-code"></i> CSS Vars';
         const csvDefault = '<i class="fas fa-file-csv"></i> CSV';
         const copyDefault = '<i class="fas fa-copy"></i> Copy HEX List';
 
         jsonBtn.addEventListener("click", () => {
-            const palette = getPalette();
-            if (palette.length === 0) {
+            const palettes = getPalettes();
+            if (palettes.length === 0) {
                 markButtonEmpty(jsonBtn, jsonDefault);
                 return;
             }
             const payload = {
                 exportedAt: new Date().toISOString(),
-                count: palette.length,
-                colors: palette
+                paletteCount: palettes.length,
+                shadeCount: palettes.reduce((sum, palette) => sum + palette.shades.length, 0),
+                palettes
             };
             downloadFile(`${filenamePrefix}.json`, JSON.stringify(payload, null, 2), "application/json");
             markButtonSuccess(jsonBtn, '<i class="fas fa-check"></i> Downloaded', jsonDefault);
         });
 
         cssBtn.addEventListener("click", () => {
-            const palette = getPalette();
-            if (palette.length === 0) {
+            const palettes = getPalettes();
+            if (palettes.length === 0) {
                 markButtonEmpty(cssBtn, cssDefault);
                 return;
             }
-            const cssContent = `:root {\n${palette
-                .map((color, index) => `  --${getSafeName(color.name, index)}: ${color.hex};`)
+            const cssContent = `:root {\n${palettes
+                .map((palette, paletteIndex) =>
+                    palette.shades.map((shadeHex, shadeIndex) =>
+                        `  --${getSafeName(palette.name, paletteIndex)}-shade-${shadeIndex + 1}: ${shadeHex};`
+                    ).join("\n")
+                )
                 .join("\n")}\n}\n`;
             downloadFile(`${filenamePrefix}.css`, cssContent, "text/css");
             markButtonSuccess(cssBtn, '<i class="fas fa-check"></i> Downloaded', cssDefault);
         });
 
         csvBtn.addEventListener("click", () => {
-            const palette = getPalette();
-            if (palette.length === 0) {
+            const palettes = getPalettes();
+            if (palettes.length === 0) {
                 markButtonEmpty(csvBtn, csvDefault);
                 return;
             }
-            const csvContent = `name,hex\n${palette.map(color => `"${color.name.replace(/"/g, '""')}",${color.hex}`).join("\n")}\n`;
+            const rows = palettes.flatMap((palette, paletteIndex) =>
+                palette.shades.map((shadeHex, shadeIndex) =>
+                    `"${palette.name.replace(/"/g, '""')}",${paletteIndex + 1},${shadeIndex + 1},${shadeHex}`
+                )
+            );
+            const csvContent = `palette_name,palette_index,shade_index,hex\n${rows.join("\n")}\n`;
             downloadFile(`${filenamePrefix}.csv`, csvContent, "text/csv");
             markButtonSuccess(csvBtn, '<i class="fas fa-check"></i> Downloaded', csvDefault);
         });
 
         copyBtn.addEventListener("click", () => {
-            const palette = getPalette();
-            if (palette.length === 0) {
+            const palettes = getPalettes();
+            if (palettes.length === 0) {
                 markButtonEmpty(copyBtn, copyDefault);
                 return;
             }
-            const hexList = palette.map(color => color.hex).join(", ");
-            navigator.clipboard.writeText(hexList).then(() => {
+            const groupedHexList = palettes
+                .map(palette => `${palette.name}: ${palette.shades.join(", ")}`)
+                .join("\n");
+            navigator.clipboard.writeText(groupedHexList).then(() => {
                 markButtonSuccess(copyBtn, '<i class="fas fa-check"></i> Copied', copyDefault);
             });
         });
@@ -438,7 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cssBtn: exportCssBtn,
         csvBtn: exportCsvBtn,
         copyBtn: copyHexListBtn,
-        getPalette: getGeneratedPaletteForExport,
+        getPalettes: getGeneratedPalettesForExport,
         filenamePrefix: "colorspeak-generated-palette"
     });
 
@@ -447,7 +480,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cssBtn: savedExportCssBtn,
         csvBtn: savedExportCsvBtn,
         copyBtn: savedCopyHexListBtn,
-        getPalette: getSavedPaletteForExport,
+        getPalettes: getSavedPalettesForExport,
         filenamePrefix: "colorspeak-saved-palettes"
     });
 
@@ -456,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cssBtn: basicExportCssBtn,
         csvBtn: basicExportCsvBtn,
         copyBtn: basicCopyHexListBtn,
-        getPalette: getBasicPaletteForExport,
+        getPalettes: getBasicPalettesForExport,
         filenamePrefix: "colorspeak-basic-palettes"
     });
 
