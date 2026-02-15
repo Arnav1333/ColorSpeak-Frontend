@@ -174,6 +174,54 @@ header p {
   flex-wrap: wrap;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.palette-export {
+  max-width: 760px;
+  margin: 1rem auto 2.2rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 0.9rem;
+  box-shadow: 0 4px 10px var(--shadow);
+  text-align: center;
+}
+
+.palette-export h3 {
+  font-size: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.export-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border: 1px solid #ccc;
+  padding: 7px 11px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.export-btn:hover {
+  background-color: var(--btn-hover);
+  color: #111;
+  border-color: #888;
+}
+
 
 .color-box {
   width: 160px;
@@ -756,5 +804,4 @@ footer {
   color: #667eea;
   font-weight: bold;
 }
-
 

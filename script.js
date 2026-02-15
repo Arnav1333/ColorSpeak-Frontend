@@ -2,10 +2,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const generatePaletteBtn = document.getElementById("generatePaletteBtn");
     const orgIdentityInput = document.getElementById("orgIdentity");
     const paletteContainer = document.getElementById("paletteContainer");
+    const exportPanel = document.getElementById("palette-export");
+    const exportJsonBtn = document.getElementById("exportJsonBtn");
+    const exportCssBtn = document.getElementById("exportCssBtn");
+    const exportCsvBtn = document.getElementById("exportCsvBtn");
+    const copyHexListBtn = document.getElementById("copyHexListBtn");
     const toggleBtn = document.getElementById("mobile-menu");
     const navLinks = document.getElementById("navbar-links");
     const themeToggleBtn = document.getElementById('themeToggle');
     const body = document.body;
+    let currentGeneratedPalette = [];
 
     generatePaletteBtn.addEventListener("click", generatePalette);
     orgIdentityInput.addEventListener("keypress", (e) => {
@@ -36,6 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function generatePalette() {
         const orgIdentity = orgIdentityInput.value.trim();
+        currentGeneratedPalette = [];
+        exportPanel.classList.add("hidden");
 
         if (!orgIdentity) {
             paletteContainer.innerHTML = '<p class="error-message">Please enter a word for your organization\'s identity.</p>';
@@ -80,11 +88,18 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(error => {
             console.error("Error:", error);
             paletteContainer.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
+            currentGeneratedPalette = [];
+            exportPanel.classList.add("hidden");
         });
     }
 
     function renderPalette(palette) {
         paletteContainer.innerHTML = '';
+        currentGeneratedPalette = palette.map(color => ({
+            name: typeof color.name === "string" ? color.name.trim() : "Untitled",
+            hex: normalizeHex(color.hex)
+        }));
+        exportPanel.classList.remove("hidden");
 
         palette.forEach(color => {
             const baseHex = normalizeHex(color.hex);
@@ -299,6 +314,76 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
     }
+
+    function getPaletteForExport() {
+        return currentGeneratedPalette.filter(color => color && color.name && color.hex);
+    }
+
+    function getSafeName(name, index) {
+        const normalized = String(name || `color-${index + 1}`)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+        return normalized || `color-${index + 1}`;
+    }
+
+    function downloadFile(filename, content, mimeType) {
+        const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function markButtonSuccess(button, successLabel, defaultLabel, duration = 1400) {
+        button.innerHTML = successLabel;
+        setTimeout(() => {
+            button.innerHTML = defaultLabel;
+        }, duration);
+    }
+
+    exportJsonBtn.addEventListener("click", () => {
+        const palette = getPaletteForExport();
+        if (palette.length === 0) return;
+        const payload = {
+            exportedAt: new Date().toISOString(),
+            count: palette.length,
+            colors: palette
+        };
+        downloadFile("colorspeak-palette.json", JSON.stringify(payload, null, 2), "application/json");
+        markButtonSuccess(exportJsonBtn, '<i class="fas fa-check"></i> Downloaded', '<i class="fas fa-file-code"></i> JSON');
+    });
+
+    exportCssBtn.addEventListener("click", () => {
+        const palette = getPaletteForExport();
+        if (palette.length === 0) return;
+        const cssContent = `:root {\n${palette
+            .map((color, index) => `  --${getSafeName(color.name, index)}: ${color.hex};`)
+            .join("\n")}\n}\n`;
+        downloadFile("colorspeak-palette.css", cssContent, "text/css");
+        markButtonSuccess(exportCssBtn, '<i class="fas fa-check"></i> Downloaded', '<i class="fas fa-code"></i> CSS Vars');
+    });
+
+    exportCsvBtn.addEventListener("click", () => {
+        const palette = getPaletteForExport();
+        if (palette.length === 0) return;
+        const csvContent = `name,hex\n${palette.map(color => `"${color.name.replace(/"/g, '""')}",${color.hex}`).join("\n")}\n`;
+        downloadFile("colorspeak-palette.csv", csvContent, "text/csv");
+        markButtonSuccess(exportCsvBtn, '<i class="fas fa-check"></i> Downloaded', '<i class="fas fa-file-csv"></i> CSV');
+    });
+
+    copyHexListBtn.addEventListener("click", () => {
+        const palette = getPaletteForExport();
+        if (palette.length === 0) return;
+        const hexList = palette.map(color => color.hex).join(", ");
+        navigator.clipboard.writeText(hexList).then(() => {
+            markButtonSuccess(copyHexListBtn, '<i class="fas fa-check"></i> Copied', '<i class="fas fa-copy"></i> Copy HEX List');
+        });
+    });
 
    
     displaySavedPalettes();
