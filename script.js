@@ -2,24 +2,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const generatePaletteBtn = document.getElementById("generatePaletteBtn");
     const orgIdentityInput = document.getElementById("orgIdentity");
     const paletteContainer = document.getElementById("paletteContainer");
-    const exportPanel = document.getElementById("palette-export");
-    const exportJsonBtn = document.getElementById("exportJsonBtn");
-    const exportCssBtn = document.getElementById("exportCssBtn");
-    const exportCsvBtn = document.getElementById("exportCsvBtn");
-    const copyHexListBtn = document.getElementById("copyHexListBtn");
-    const savedExportJsonBtn = document.getElementById("savedExportJsonBtn");
-    const savedExportCssBtn = document.getElementById("savedExportCssBtn");
-    const savedExportCsvBtn = document.getElementById("savedExportCsvBtn");
-    const savedCopyHexListBtn = document.getElementById("savedCopyHexListBtn");
-    const basicExportJsonBtn = document.getElementById("basicExportJsonBtn");
-    const basicExportCssBtn = document.getElementById("basicExportCssBtn");
-    const basicExportCsvBtn = document.getElementById("basicExportCsvBtn");
-    const basicCopyHexListBtn = document.getElementById("basicCopyHexListBtn");
     const toggleBtn = document.getElementById("mobile-menu");
     const navLinks = document.getElementById("navbar-links");
     const themeToggleBtn = document.getElementById('themeToggle');
     const body = document.body;
-    let currentGeneratedPalette = [];
 
     generatePaletteBtn.addEventListener("click", generatePalette);
     orgIdentityInput.addEventListener("keypress", (e) => {
@@ -50,8 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function generatePalette() {
         const orgIdentity = orgIdentityInput.value.trim();
-        currentGeneratedPalette = [];
-        exportPanel.classList.add("hidden");
 
         if (!orgIdentity) {
             paletteContainer.innerHTML = '<p class="error-message">Please enter a word for your organization\'s identity.</p>';
@@ -96,18 +80,11 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(error => {
             console.error("Error:", error);
             paletteContainer.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
-            currentGeneratedPalette = [];
-            exportPanel.classList.add("hidden");
         });
     }
 
     function renderPalette(palette) {
         paletteContainer.innerHTML = '';
-        currentGeneratedPalette = palette.map(color => ({
-            name: typeof color.name === "string" ? color.name.trim() : "Untitled",
-            hex: normalizeHex(color.hex)
-        }));
-        exportPanel.classList.remove("hidden");
 
         palette.forEach(color => {
             const baseHex = normalizeHex(color.hex);
@@ -134,6 +111,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="copy-btn" data-hex="${baseHex}">
                         <i class="fas fa-copy"></i> Copy Base
                     </button>
+                    <button class="export-palette-btn export-btn" data-name="${(typeof color.name === "string" ? color.name.trim() : "Untitled").replace(/"/g, "&quot;")}" data-shades="${shades.join(",")}">
+                        <i class="fas fa-code"></i> Export CSS
+                    </button>
                     <button class="save-btn" data-color='${JSON.stringify({ ...color, hex: baseHex })}'>
                         <i class="fas fa-bookmark"></i> Save
                     </button>
@@ -144,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         attachButtonListeners();
+        attachPaletteExportListeners();
     }
 
     function normalizeHex(hex) {
@@ -232,6 +213,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="copy-btn" data-hex="${baseHex}">
                         <i class="fas fa-copy"></i> Copy Base
                     </button>
+                    <button class="export-palette-btn export-btn" data-name="${color.name.replace(/"/g, "&quot;")}" data-shades="${shades.join(",")}">
+                        <i class="fas fa-code"></i> Export CSS
+                    </button>
                     <button class="remove-btn" data-hex="${baseHex}">
                         <i class="fas fa-trash"></i> Remove
                     </button>
@@ -243,6 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         attachCopyListeners();
         attachRemoveListeners();
+        attachPaletteExportListeners();
     }
 
     function attachButtonListeners() {
@@ -323,48 +308,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function getGeneratedPalettesForExport() {
-        return currentGeneratedPalette
-            .filter(color => color && color.name && color.hex)
-            .map(color => {
-                const baseHex = normalizeHex(color.hex);
-                return {
-                    name: color.name,
-                    baseHex,
-                    shades: generateShades(baseHex)
-                };
-            });
-    }
-
-    function getSavedPalettesForExport() {
-        let saved = JSON.parse(localStorage.getItem("savedPalettes") || "[]");
-        saved = saved.filter(c => c && typeof c.hex === "string" && typeof c.name === "string");
-        return saved.map(color => {
-            const baseHex = normalizeHex(color.hex);
-            return {
-                name: color.name.trim() || "Untitled",
-                baseHex,
-                shades: generateShades(baseHex)
-            };
-        });
-    }
-
-    function getBasicPalettesForExport() {
-        const cards = Array.from(document.querySelectorAll(".vibgyor-card"));
-        return cards
-            .map((card, index) => {
-                const shades = Array.from(card.querySelectorAll(".color-shade"))
-                    .map(shade => normalizeHex(shade.getAttribute("data-hex")))
-                    .filter(Boolean);
-                return {
-                    name: `basic-palette-${index + 1}`,
-                    baseHex: shades[Math.floor(shades.length / 2)] || shades[0] || "#000000",
-                    shades
-                };
-            })
-            .filter(palette => palette.shades.length > 0);
-    }
-
     function getSafeName(name, index) {
         const normalized = String(name || `color-${index + 1}`)
             .toLowerCase()
@@ -396,105 +339,59 @@ document.addEventListener("DOMContentLoaded", () => {
         markButtonSuccess(button, '<i class="fas fa-ban"></i> No colors', defaultLabel, 1200);
     }
 
-    function bindExportControls({ jsonBtn, cssBtn, csvBtn, copyBtn, getPalettes, filenamePrefix }) {
-        const jsonDefault = '<i class="fas fa-file-code"></i> JSON';
-        const cssDefault = '<i class="fas fa-code"></i> CSS Vars';
-        const csvDefault = '<i class="fas fa-file-csv"></i> CSV';
-        const copyDefault = '<i class="fas fa-copy"></i> Copy HEX List';
+    function buildPaletteCss(name, shades) {
+        const safePaletteName = getSafeName(name, 0);
+        return `:root {\n${shades.map((shadeHex, index) => `  --${safePaletteName}-shade-${index + 1}: ${shadeHex};`).join("\n")}\n}\n`;
+    }
 
-        jsonBtn.addEventListener("click", () => {
-            const palettes = getPalettes();
-            if (palettes.length === 0) {
-                markButtonEmpty(jsonBtn, jsonDefault);
-                return;
-            }
-            const payload = {
-                exportedAt: new Date().toISOString(),
-                paletteCount: palettes.length,
-                shadeCount: palettes.reduce((sum, palette) => sum + palette.shades.length, 0),
-                palettes
-            };
-            downloadFile(`${filenamePrefix}.json`, JSON.stringify(payload, null, 2), "application/json");
-            markButtonSuccess(jsonBtn, '<i class="fas fa-check"></i> Downloaded', jsonDefault);
-        });
+    function attachPaletteExportListeners() {
+        document.querySelectorAll(".export-palette-btn").forEach(button => {
+            if (button.dataset.exportBound === "true") return;
+            button.dataset.exportBound = "true";
+            button.addEventListener("click", () => {
+                const defaultLabel = '<i class="fas fa-code"></i> Export CSS';
+                const paletteName = button.getAttribute("data-name") || "palette";
+                const shades = (button.getAttribute("data-shades") || "")
+                    .split(",")
+                    .map(hex => normalizeHex(hex))
+                    .filter(Boolean);
 
-        cssBtn.addEventListener("click", () => {
-            const palettes = getPalettes();
-            if (palettes.length === 0) {
-                markButtonEmpty(cssBtn, cssDefault);
-                return;
-            }
-            const cssContent = `:root {\n${palettes
-                .map((palette, paletteIndex) =>
-                    palette.shades.map((shadeHex, shadeIndex) =>
-                        `  --${getSafeName(palette.name, paletteIndex)}-shade-${shadeIndex + 1}: ${shadeHex};`
-                    ).join("\n")
-                )
-                .join("\n")}\n}\n`;
-            downloadFile(`${filenamePrefix}.css`, cssContent, "text/css");
-            markButtonSuccess(cssBtn, '<i class="fas fa-check"></i> Downloaded', cssDefault);
-        });
+                if (shades.length === 0) {
+                    markButtonEmpty(button, defaultLabel);
+                    return;
+                }
 
-        csvBtn.addEventListener("click", () => {
-            const palettes = getPalettes();
-            if (palettes.length === 0) {
-                markButtonEmpty(csvBtn, csvDefault);
-                return;
-            }
-            const rows = palettes.flatMap((palette, paletteIndex) =>
-                palette.shades.map((shadeHex, shadeIndex) =>
-                    `"${palette.name.replace(/"/g, '""')}",${paletteIndex + 1},${shadeIndex + 1},${shadeHex}`
-                )
-            );
-            const csvContent = `palette_name,palette_index,shade_index,hex\n${rows.join("\n")}\n`;
-            downloadFile(`${filenamePrefix}.csv`, csvContent, "text/csv");
-            markButtonSuccess(csvBtn, '<i class="fas fa-check"></i> Downloaded', csvDefault);
-        });
-
-        copyBtn.addEventListener("click", () => {
-            const palettes = getPalettes();
-            if (palettes.length === 0) {
-                markButtonEmpty(copyBtn, copyDefault);
-                return;
-            }
-            const groupedHexList = palettes
-                .map(palette => `${palette.name}: ${palette.shades.join(", ")}`)
-                .join("\n");
-            navigator.clipboard.writeText(groupedHexList).then(() => {
-                markButtonSuccess(copyBtn, '<i class="fas fa-check"></i> Copied', copyDefault);
+                const cssContent = buildPaletteCss(paletteName, shades);
+                downloadFile(`${getSafeName(paletteName, 0)}-palette.css`, cssContent, "text/css");
+                markButtonSuccess(button, '<i class="fas fa-check"></i> Exported', defaultLabel);
             });
         });
     }
 
-    bindExportControls({
-        jsonBtn: exportJsonBtn,
-        cssBtn: exportCssBtn,
-        csvBtn: exportCsvBtn,
-        copyBtn: copyHexListBtn,
-        getPalettes: getGeneratedPalettesForExport,
-        filenamePrefix: "colorspeak-generated-palette"
-    });
+    function addBasicPaletteExportButtons() {
+        document.querySelectorAll(".vibgyor-card").forEach((card, index) => {
+            if (card.querySelector(".export-palette-btn")) return;
+            const shades = Array.from(card.querySelectorAll(".color-shade"))
+                .map(shade => normalizeHex(shade.getAttribute("data-hex")))
+                .filter(Boolean);
 
-    bindExportControls({
-        jsonBtn: savedExportJsonBtn,
-        cssBtn: savedExportCssBtn,
-        csvBtn: savedExportCsvBtn,
-        copyBtn: savedCopyHexListBtn,
-        getPalettes: getSavedPalettesForExport,
-        filenamePrefix: "colorspeak-saved-palettes"
-    });
+            if (shades.length === 0) return;
 
-    bindExportControls({
-        jsonBtn: basicExportJsonBtn,
-        cssBtn: basicExportCssBtn,
-        csvBtn: basicExportCsvBtn,
-        copyBtn: basicCopyHexListBtn,
-        getPalettes: getBasicPalettesForExport,
-        filenamePrefix: "colorspeak-basic-palettes"
-    });
+            const actions = document.createElement("div");
+            actions.classList.add("vibgyor-actions");
+            actions.innerHTML = `
+                <button class="export-palette-btn export-btn" data-name="basic-palette-${index + 1}" data-shades="${shades.join(",")}">
+                    <i class="fas fa-code"></i> Export CSS
+                </button>
+            `;
+            card.appendChild(actions);
+        });
+    }
 
    
     displaySavedPalettes();
+    addBasicPaletteExportButtons();
+    attachPaletteExportListeners();
     attachVibgyorCopyListeners();
 });
 window.addEventListener('scroll', function () {
