@@ -425,6 +425,8 @@ header p {
 .vibgyor-actions {
   display: flex;
   justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
   padding-top: 0.25rem;
 }
 

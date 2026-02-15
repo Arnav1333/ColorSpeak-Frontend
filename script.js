@@ -114,6 +114,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="export-palette-btn export-btn" data-name="${(typeof color.name === "string" ? color.name.trim() : "Untitled").replace(/"/g, "&quot;")}" data-shades="${shades.join(",")}">
                         <i class="fas fa-code"></i> Export CSS
                     </button>
+                    <button class="export-palette-png-btn export-btn" data-name="${(typeof color.name === "string" ? color.name.trim() : "Untitled").replace(/"/g, "&quot;")}" data-shades="${shades.join(",")}">
+                        <i class="fas fa-image"></i> Export PNG
+                    </button>
                     <button class="save-btn" data-color='${JSON.stringify({ ...color, hex: baseHex })}'>
                         <i class="fas fa-bookmark"></i> Save
                     </button>
@@ -125,6 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         attachButtonListeners();
         attachPaletteExportListeners();
+        attachPalettePngExportListeners();
     }
 
     function normalizeHex(hex) {
@@ -216,6 +220,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="export-palette-btn export-btn" data-name="${color.name.replace(/"/g, "&quot;")}" data-shades="${shades.join(",")}">
                         <i class="fas fa-code"></i> Export CSS
                     </button>
+                    <button class="export-palette-png-btn export-btn" data-name="${color.name.replace(/"/g, "&quot;")}" data-shades="${shades.join(",")}">
+                        <i class="fas fa-image"></i> Export PNG
+                    </button>
                     <button class="remove-btn" data-hex="${baseHex}">
                         <i class="fas fa-trash"></i> Remove
                     </button>
@@ -228,6 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
         attachCopyListeners();
         attachRemoveListeners();
         attachPaletteExportListeners();
+        attachPalettePngExportListeners();
     }
 
     function attachButtonListeners() {
@@ -344,6 +352,52 @@ document.addEventListener("DOMContentLoaded", () => {
         return `:root {\n${shades.map((shadeHex, index) => `  --${safePaletteName}-shade-${index + 1}: ${shadeHex};`).join("\n")}\n}\n`;
     }
 
+    function exportPaletteAsPng(name, shades) {
+        const swatchCount = Math.max(shades.length, 1);
+        const canvasWidth = 1080;
+        const headerHeight = 120;
+        const swatchHeight = 240;
+        const footerHeight = 84;
+        const canvasHeight = headerHeight + swatchHeight + footerHeight;
+        const canvas = document.createElement("canvas");
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return false;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        ctx.fillStyle = "#111827";
+        ctx.font = "700 44px Inter, Arial, sans-serif";
+        ctx.fillText(name, 46, 70);
+        ctx.font = "400 22px Inter, Arial, sans-serif";
+        ctx.fillStyle = "#6b7280";
+        ctx.fillText(`Shades: ${shades.length}`, 46, 102);
+
+        const swatchWidth = Math.floor((canvasWidth - 80) / swatchCount);
+        shades.forEach((shadeHex, index) => {
+            const x = 40 + index * swatchWidth;
+            const width = index === swatchCount - 1 ? (canvasWidth - 40 - x) : swatchWidth;
+            ctx.fillStyle = shadeHex;
+            ctx.fillRect(x, headerHeight, width, swatchHeight);
+
+            ctx.fillStyle = "#111827";
+            ctx.font = "600 20px Inter, Arial, sans-serif";
+            ctx.fillText(shadeHex, x + 12, canvasHeight - 30);
+        });
+
+        const safeFileName = `${getSafeName(name, 0)}-palette.png`;
+        const url = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = safeFileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return true;
+    }
+
     function attachPaletteExportListeners() {
         document.querySelectorAll(".export-palette-btn").forEach(button => {
             if (button.dataset.exportBound === "true") return;
@@ -368,6 +422,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function attachPalettePngExportListeners() {
+        document.querySelectorAll(".export-palette-png-btn").forEach(button => {
+            if (button.dataset.exportBound === "true") return;
+            button.dataset.exportBound = "true";
+            button.addEventListener("click", () => {
+                const defaultLabel = '<i class="fas fa-image"></i> Export PNG';
+                const paletteName = button.getAttribute("data-name") || "palette";
+                const shades = (button.getAttribute("data-shades") || "")
+                    .split(",")
+                    .map(hex => normalizeHex(hex))
+                    .filter(Boolean);
+
+                if (shades.length === 0) {
+                    markButtonEmpty(button, defaultLabel);
+                    return;
+                }
+
+                const didExport = exportPaletteAsPng(paletteName, shades);
+                if (!didExport) {
+                    markButtonEmpty(button, defaultLabel);
+                    return;
+                }
+                markButtonSuccess(button, '<i class="fas fa-check"></i> Exported', defaultLabel);
+            });
+        });
+    }
+
     function addBasicPaletteExportButtons() {
         document.querySelectorAll(".vibgyor-card").forEach((card, index) => {
             if (card.querySelector(".export-palette-btn")) return;
@@ -383,6 +464,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 <button class="export-palette-btn export-btn" data-name="basic-palette-${index + 1}" data-shades="${shades.join(",")}">
                     <i class="fas fa-code"></i> Export CSS
                 </button>
+                <button class="export-palette-png-btn export-btn" data-name="basic-palette-${index + 1}" data-shades="${shades.join(",")}">
+                    <i class="fas fa-image"></i> Export PNG
+                </button>
             `;
             card.appendChild(actions);
         });
@@ -392,6 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
     displaySavedPalettes();
     addBasicPaletteExportButtons();
     attachPaletteExportListeners();
+    attachPalettePngExportListeners();
     attachVibgyorCopyListeners();
 });
 window.addEventListener('scroll', function () {
