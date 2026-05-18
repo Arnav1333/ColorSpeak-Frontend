@@ -122,48 +122,62 @@ document.addEventListener("DOMContentLoaded", () => {
         palettes.forEach((palette, paletteIndex) => {
             const group = document.createElement("section");
             group.classList.add("generated-palette-group");
-            group.setAttribute("draggable", "true");
             const heading = document.createElement("h3");
             heading.classList.add("generated-palette-title");
             heading.textContent = `Suggested Palette ${paletteIndex + 1}`;
-            const shades = palette.colors.map(color => normalizeHex(color.hex));
-            const shadeCards = palette.colors.map((color, index) => `
-                <div class="palette-swatch-card">
-                    <button
-                        class="palette-swatch copy-btn"
-                        data-hex="${normalizeHex(color.hex)}"
-                        title="Copy ${normalizeHex(color.hex)}"
-                        aria-label="Copy ${color.name} (${normalizeHex(color.hex)})"
-                        style="background: ${normalizeHex(color.hex)}"
-                    ></button>
-                    <div class="palette-swatch-meta">
-                        <span class="color-name">${color.name}</span>
-                        <span class="hex-code">${normalizeHex(color.hex)}</span>
+            const cardsWrapper = document.createElement("div");
+            cardsWrapper.classList.add("generated-palette-cards");
+
+            const shades = [];
+            palette.colors.forEach(color => {
+                const baseHex = normalizeHex(color.hex);
+                const generatedShades = generateShades(baseHex);
+                shades.push(baseHex);
+                const colorBox = document.createElement("div");
+                colorBox.classList.add("color-box");
+                colorBox.classList.add("shade-card");
+
+                colorBox.innerHTML = `
+                    <span class="color-name">${color.name}</span>
+                    <span class="hex-code">Base: ${baseHex}</span>
+                    <div class="shade-strip">
+                        ${generatedShades.map((shadeHex, index) => `
+                            <button
+                                class="shade-segment copy-btn"
+                                data-hex="${shadeHex}"
+                                title="Copy ${shadeHex}"
+                                aria-label="Copy shade ${index + 1} (${shadeHex})"
+                                style="background-color:${shadeHex}"
+                            ></button>
+                        `).join("")}
                     </div>
-                </div>
-            `).join("");
+                    <div class="palette-actions">
+                        <button class="copy-btn" data-hex="${baseHex}">
+                            <i class="fas fa-copy"></i> Copy Base
+                        </button>
+                        <button class="export-palette-btn export-btn" data-name="${(typeof color.name === "string" ? color.name.trim() : "Untitled").replace(/"/g, "&quot;")}" data-shades="${generatedShades.join(",")}">
+                            <i class="fas fa-code"></i> Export CSS
+                        </button>
+                        <button class="export-palette-png-btn export-btn" data-name="${(typeof color.name === "string" ? color.name.trim() : "Untitled").replace(/"/g, "&quot;")}" data-shades="${generatedShades.join(",")}">
+                            <i class="fas fa-image"></i> Export PNG
+                        </button>
+                        <button class="save-btn" data-color='${JSON.stringify({ ...color, hex: baseHex })}'>
+                            <i class="fas fa-bookmark"></i> Save
+                        </button>
+                    </div>
+                `;
+                cardsWrapper.appendChild(colorBox);
+            });
 
             const tagsHtml = palette.personality_tags.map(tag => `<span class="tag-chip">${tag}</span>`).join("");
             const story = document.createElement("div");
             story.classList.add("palette-insights");
             story.innerHTML = `
-                <div class="palette-actions">
-                    <button class="export-palette-btn export-btn" data-name="suggested-palette-${paletteIndex + 1}" data-shades="${shades.join(",")}">
-                        <i class="fas fa-code"></i> Export CSS
-                    </button>
-                    <button class="export-palette-png-btn export-btn" data-name="suggested-palette-${paletteIndex + 1}" data-shades="${shades.join(",")}">
-                        <i class="fas fa-image"></i> Export PNG
-                    </button>
-                </div>
                 <h3>Palette ${paletteIndex + 1} Story</h3>
                 ${palette.meaning ? `<p><strong>Color Psychology:</strong> ${palette.meaning}</p>` : ""}
                 ${palette.brand_vibe ? `<p><strong>Brand Vibe:</strong> ${palette.brand_vibe}</p>` : ""}
                 ${palette.personality_tags.length ? `<div class="tag-row">${tagsHtml}</div>` : ""}
             `;
-
-            const cardsWrapper = document.createElement("div");
-            cardsWrapper.classList.add("generated-palette-cards");
-            cardsWrapper.innerHTML = shadeCards;
 
             group.appendChild(heading);
             group.appendChild(cardsWrapper);
@@ -171,34 +185,10 @@ document.addEventListener("DOMContentLoaded", () => {
             paletteContainer.appendChild(group);
         });
 
-        attachGeneratedPaletteDrag();
         attachButtonListeners();
         attachPaletteExportListeners();
         attachPalettePngExportListeners();
         attachCopyListeners();
-    }
-
-    function attachGeneratedPaletteDrag() {
-        const groups = Array.from(paletteContainer.querySelectorAll(".generated-palette-group"));
-        groups.forEach(group => {
-            if (group.dataset.dragBound === "true") return;
-            group.dataset.dragBound = "true";
-
-            group.addEventListener("dragstart", () => {
-                group.classList.add("dragging");
-            });
-            group.addEventListener("dragend", () => {
-                group.classList.remove("dragging");
-            });
-            group.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                const dragging = paletteContainer.querySelector(".generated-palette-group.dragging");
-                if (!dragging || dragging === group) return;
-                const rect = group.getBoundingClientRect();
-                const after = e.clientY > rect.top + rect.height / 2;
-                paletteContainer.insertBefore(dragging, after ? group.nextSibling : group);
-            });
-        });
     }
 
     function normalizeHex(hex) {
