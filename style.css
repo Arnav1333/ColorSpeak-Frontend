@@ -186,6 +186,7 @@ header p {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-color);
+  text-align: center;
 }
 
 .generated-palette-cards {
