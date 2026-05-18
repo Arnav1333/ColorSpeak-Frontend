@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const generatePaletteBtn = document.getElementById("generatePaletteBtn");
     const orgIdentityInput = document.getElementById("orgIdentity");
     const paletteContainer = document.getElementById("paletteContainer");
-    const paletteInsights = document.getElementById("paletteInsights");
     const toggleBtn = document.getElementById("mobile-menu");
     const navLinks = document.getElementById("navbar-links");
     const themeToggleBtn = document.getElementById('themeToggle');
@@ -37,9 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function generatePalette() {
         const orgIdentity = orgIdentityInput.value.trim();
-        paletteInsights.classList.add("hidden");
-        paletteInsights.innerHTML = "";
-
         if (!orgIdentity) {
             paletteContainer.innerHTML = '<p class="error-message">Please enter a word for your organization\'s identity.</p>';
             return;
@@ -60,9 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return response.json();
         })
         .then(data => {
-            const paletteMeta = normalizePaletteMeta(data.palette);
             let rawContent = data.result;
             let colorPalette;
+            let normalizedPalettes = normalizePalettesPayload(data.palettes);
 
             try {
                 colorPalette = JSON.parse(rawContent);
@@ -79,64 +75,67 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("Empty or invalid color palette received.");
             }
 
-            renderPalette(colorPalette);
-            renderPaletteInsights(paletteMeta);
+            if (!normalizedPalettes) {
+                normalizedPalettes = [{
+                    colors: colorPalette,
+                    meaning: "",
+                    brand_vibe: "",
+                    personality_tags: []
+                }];
+            }
+
+            renderGeneratedPalettes(normalizedPalettes);
         })
         .catch(error => {
             console.error("Error:", error);
             paletteContainer.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
-            paletteInsights.classList.add("hidden");
-            paletteInsights.innerHTML = "";
         });
     }
 
-    function normalizePaletteMeta(rawPalette) {
-        if (!rawPalette || typeof rawPalette !== "object") return null;
-        const meaning = typeof rawPalette.meaning === "string" ? rawPalette.meaning.trim() : "";
-        const brandVibe = typeof rawPalette.brand_vibe === "string" ? rawPalette.brand_vibe.trim() : "";
-        const personalityTags = Array.isArray(rawPalette.personality_tags)
-            ? rawPalette.personality_tags.map(tag => String(tag).trim()).filter(Boolean).slice(0, 6)
-            : [];
-
-        if (!meaning && !brandVibe && personalityTags.length === 0) {
-            return null;
-        }
-
-        return {
-            meaning,
-            brandVibe,
-            personalityTags
-        };
+    function normalizePalettesPayload(rawPalettes) {
+        if (!Array.isArray(rawPalettes) || rawPalettes.length === 0) return null;
+        const cleaned = rawPalettes
+            .map(item => {
+                if (!item || typeof item !== "object" || !Array.isArray(item.colors)) return null;
+                const colors = item.colors
+                    .map(color => ({
+                        name: typeof color?.name === "string" ? color.name.trim() : "Untitled",
+                        hex: normalizeHex(color?.hex)
+                    }))
+                    .filter(color => color.name && color.hex);
+                if (colors.length === 0) return null;
+                return {
+                    colors,
+                    meaning: typeof item.meaning === "string" ? item.meaning.trim() : "",
+                    brand_vibe: typeof item.brand_vibe === "string" ? item.brand_vibe.trim() : "",
+                    personality_tags: Array.isArray(item.personality_tags)
+                        ? item.personality_tags.map(tag => String(tag).trim()).filter(Boolean).slice(0, 6)
+                        : []
+                };
+            })
+            .filter(Boolean);
+        return cleaned.length ? cleaned : null;
     }
 
-    function renderPaletteInsights(meta) {
-        if (!meta) {
-            paletteInsights.classList.add("hidden");
-            paletteInsights.innerHTML = "";
-            return;
-        }
-
-        const tagsHtml = meta.personalityTags.map(tag => `<span class="tag-chip">${tag}</span>`).join("");
-        paletteInsights.innerHTML = `
-            <h3>Palette Story</h3>
-            ${meta.meaning ? `<p><strong>Color Psychology:</strong> ${meta.meaning}</p>` : ""}
-            ${meta.brandVibe ? `<p><strong>Brand Vibe:</strong> ${meta.brandVibe}</p>` : ""}
-            ${meta.personalityTags.length ? `<div class="tag-row">${tagsHtml}</div>` : ""}
-        `;
-        paletteInsights.classList.remove("hidden");
-    }
-
-    function renderPalette(palette) {
+    function renderGeneratedPalettes(palettes) {
         paletteContainer.innerHTML = '';
+        palettes.forEach((palette, paletteIndex) => {
+            const group = document.createElement("section");
+            group.classList.add("generated-palette-group");
+            const heading = document.createElement("h3");
+            heading.classList.add("generated-palette-title");
+            heading.textContent = `Suggested Palette ${paletteIndex + 1}`;
+            const cardsWrapper = document.createElement("div");
+            cardsWrapper.classList.add("generated-palette-cards");
 
-        palette.forEach(color => {
-            const baseHex = normalizeHex(color.hex);
-            const shades = generateShades(baseHex);
-            const colorBox = document.createElement("div");
-            colorBox.classList.add("color-box");
-            colorBox.classList.add("shade-card");
+            palette.colors.forEach(color => {
+                const baseHex = normalizeHex(color.hex);
+                const shades = generateShades(baseHex);
+                const colorBox = document.createElement("div");
+                colorBox.classList.add("color-box");
+                colorBox.classList.add("shade-card");
 
-            colorBox.innerHTML = `
+                colorBox.innerHTML = `
                 <span class="color-name">${color.name}</span>
                 <span class="hex-code">Base: ${baseHex}</span>
                 <div class="shade-strip">
@@ -166,7 +165,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
 
-            paletteContainer.appendChild(colorBox);
+                cardsWrapper.appendChild(colorBox);
+            });
+
+            const tagsHtml = palette.personality_tags.map(tag => `<span class="tag-chip">${tag}</span>`).join("");
+            const story = document.createElement("div");
+            story.classList.add("palette-insights");
+            story.innerHTML = `
+                <h3>Palette ${paletteIndex + 1} Story</h3>
+                ${palette.meaning ? `<p><strong>Color Psychology:</strong> ${palette.meaning}</p>` : ""}
+                ${palette.brand_vibe ? `<p><strong>Brand Vibe:</strong> ${palette.brand_vibe}</p>` : ""}
+                ${palette.personality_tags.length ? `<div class="tag-row">${tagsHtml}</div>` : ""}
+            `;
+
+            group.appendChild(heading);
+            group.appendChild(cardsWrapper);
+            group.appendChild(story);
+            paletteContainer.appendChild(group);
         });
 
         attachButtonListeners();
