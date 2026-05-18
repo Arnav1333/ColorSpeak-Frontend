@@ -174,6 +174,45 @@ header p {
   flex-wrap: wrap;
 }
 
+.palette-insights {
+  width: min(92vw, 760px);
+  margin: 0.8rem auto 1.6rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 4px 10px var(--shadow);
+}
+
+.palette-insights h3 {
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.palette-insights p {
+  color: var(--link-color);
+  margin-bottom: 0.5rem;
+  line-height: 1.45;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .hidden {
   display: none !important;
 }

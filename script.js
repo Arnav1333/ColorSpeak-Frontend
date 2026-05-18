@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const generatePaletteBtn = document.getElementById("generatePaletteBtn");
     const orgIdentityInput = document.getElementById("orgIdentity");
     const paletteContainer = document.getElementById("paletteContainer");
+    const paletteInsights = document.getElementById("paletteInsights");
     const toggleBtn = document.getElementById("mobile-menu");
     const navLinks = document.getElementById("navbar-links");
     const themeToggleBtn = document.getElementById('themeToggle');
@@ -36,6 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function generatePalette() {
         const orgIdentity = orgIdentityInput.value.trim();
+        paletteInsights.classList.add("hidden");
+        paletteInsights.innerHTML = "";
 
         if (!orgIdentity) {
             paletteContainer.innerHTML = '<p class="error-message">Please enter a word for your organization\'s identity.</p>';
@@ -57,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return response.json();
         })
         .then(data => {
+            const paletteMeta = normalizePaletteMeta(data.palette);
             let rawContent = data.result;
             let colorPalette;
 
@@ -76,11 +80,50 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             renderPalette(colorPalette);
+            renderPaletteInsights(paletteMeta);
         })
         .catch(error => {
             console.error("Error:", error);
             paletteContainer.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
+            paletteInsights.classList.add("hidden");
+            paletteInsights.innerHTML = "";
         });
+    }
+
+    function normalizePaletteMeta(rawPalette) {
+        if (!rawPalette || typeof rawPalette !== "object") return null;
+        const meaning = typeof rawPalette.meaning === "string" ? rawPalette.meaning.trim() : "";
+        const brandVibe = typeof rawPalette.brand_vibe === "string" ? rawPalette.brand_vibe.trim() : "";
+        const personalityTags = Array.isArray(rawPalette.personality_tags)
+            ? rawPalette.personality_tags.map(tag => String(tag).trim()).filter(Boolean).slice(0, 6)
+            : [];
+
+        if (!meaning && !brandVibe && personalityTags.length === 0) {
+            return null;
+        }
+
+        return {
+            meaning,
+            brandVibe,
+            personalityTags
+        };
+    }
+
+    function renderPaletteInsights(meta) {
+        if (!meta) {
+            paletteInsights.classList.add("hidden");
+            paletteInsights.innerHTML = "";
+            return;
+        }
+
+        const tagsHtml = meta.personalityTags.map(tag => `<span class="tag-chip">${tag}</span>`).join("");
+        paletteInsights.innerHTML = `
+            <h3>Palette Story</h3>
+            ${meta.meaning ? `<p><strong>Color Psychology:</strong> ${meta.meaning}</p>` : ""}
+            ${meta.brandVibe ? `<p><strong>Brand Vibe:</strong> ${meta.brandVibe}</p>` : ""}
+            ${meta.personalityTags.length ? `<div class="tag-row">${tagsHtml}</div>` : ""}
+        `;
+        paletteInsights.classList.remove("hidden");
     }
 
     function renderPalette(palette) {
