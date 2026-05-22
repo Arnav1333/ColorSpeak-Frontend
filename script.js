@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const generatePaletteBtn = document.getElementById("generatePaletteBtn");
     const orgIdentityInput = document.getElementById("orgIdentity");
     const paletteContainer = document.getElementById("paletteContainer");
+    const promptChips = document.querySelectorAll(".prompt-chip");
     const toggleBtn = document.getElementById("mobile-menu");
     const navLinks = document.getElementById("navbar-links");
     const themeToggleBtn = document.getElementById('themeToggle');
@@ -10,6 +11,14 @@ document.addEventListener("DOMContentLoaded", () => {
     generatePaletteBtn.addEventListener("click", generatePalette);
     orgIdentityInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") generatePalette();
+    });
+    promptChips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            const prompt = chip.getAttribute("data-prompt") || "";
+            orgIdentityInput.value = prompt;
+            orgIdentityInput.focus();
+            orgIdentityInput.setSelectionRange(prompt.length, prompt.length);
+        });
     });
 
     toggleBtn.addEventListener("click", () => {
